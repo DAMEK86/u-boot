@@ -145,6 +145,7 @@ enum emac_variant {
 	A64_EMAC,
 	R40_GMAC,
 	H6_EMAC,
+	V3S_EMAC,
 };
 
 struct emac_dma_desc {
@@ -303,7 +304,7 @@ static void sun8i_adjust_link(struct emac_eth_dev *priv,
 static u32 sun8i_emac_set_syscon_ephy(struct emac_eth_dev *priv, u32 reg)
 {
 	if (priv->use_internal_phy) {
-		/* H3 based SoC's that has an Internal 100MBit PHY
+		/* H3 and V3s based SoC's that has an Internal 100MBit PHY
 		 * needs to be configured and powered up before use
 		*/
 		reg &= ~H3_EPHY_DEFAULT_MASK;
@@ -343,7 +344,8 @@ static int sun8i_emac_set_syscon(struct sun8i_eth_pdata *pdata,
 	reg &= ~(SC_ETCS_MASK | SC_EPIT);
 	if (priv->variant == H3_EMAC ||
 	    priv->variant == A64_EMAC ||
-	    priv->variant == H6_EMAC)
+	    priv->variant == H6_EMAC ||
+	    priv->variant == V3S_EMAC)
 		reg &= ~SC_RMII_EN;
 
 	switch (priv->interface) {
@@ -354,7 +356,8 @@ static int sun8i_emac_set_syscon(struct sun8i_eth_pdata *pdata,
 	case PHY_INTERFACE_MODE_RGMII_ID:
 	case PHY_INTERFACE_MODE_RGMII_RXID:
 	case PHY_INTERFACE_MODE_RGMII_TXID:
-		reg |= SC_EPIT | SC_ETCS_INT_GMII;
+		if (priv->variant != V3S_EMAC)
+			reg |= SC_EPIT | SC_ETCS_INT_GMII;
 		break;
 	case PHY_INTERFACE_MODE_RMII:
 		if (priv->variant == H3_EMAC ||
@@ -566,6 +569,9 @@ static int parse_phy_pins(struct udevice *dev)
 		iomux = SUN8I_IOMUX;
 	else if (IS_ENABLED(CONFIG_MACH_SUN50I))
 		iomux = SUN8I_IOMUX;
+	else if (IS_ENABLED(CONFIG_MACH_SUN8I_V3S))
+		// V3s does not expose any MAC pins - skip gpio setup.
+		return 0;
 	else
 		BUILD_BUG_ON_MSG(1, "missing pinmux value for Ethernet pins");
 
@@ -956,7 +962,8 @@ static int sun8i_emac_eth_of_to_plat(struct udevice *dev)
 		return -EINVAL;
 	}
 
-	if (priv->variant == H3_EMAC) {
+	if (priv->variant == H3_EMAC ||
+	    priv->variant == V3S_EMAC) {
 		ret = sun8i_handle_internal_phy(dev, priv);
 		if (ret)
 			return ret;
@@ -1009,6 +1016,8 @@ static const struct udevice_id sun8i_emac_eth_ids[] = {
 		.data = (uintptr_t)R40_GMAC },
 	{.compatible = "allwinner,sun50i-h6-emac",
 		.data = (uintptr_t)H6_EMAC },
+	{.compatible = "allwinner,sun8i-v3s-emac",
+		.data = (uintptr_t)V3S_EMAC },
 	{ }
 };
 
