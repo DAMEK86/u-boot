@@ -477,7 +477,7 @@ static int sun8i_emac_eth_start(struct udevice *dev)
 	/* Soft reset MAC */
 	writel(EMAC_CTL1_SOFT_RST, priv->mac_reg + EMAC_CTL1);
 	ret = wait_for_bit_le32(priv->mac_reg + EMAC_CTL1,
-				EMAC_CTL1_SOFT_RST, false, 10, true);
+				EMAC_CTL1_SOFT_RST, false, 500, true);
 	if (ret) {
 		printf("%s: Timeout\n", __func__);
 		return ret;
