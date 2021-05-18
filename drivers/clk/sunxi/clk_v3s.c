@@ -29,7 +29,7 @@ static struct ccu_clk_gate v3s_gates[] = {
 
 	[CLK_SPI0]		= GATE(0x0a0, BIT(31)),
 
-	[CLK_USB_PHY0]          = GATE(0x0cc, BIT(8)),
+	[CLK_USB_PHY0]		= GATE(0x0cc, BIT(8)),
 };
 
 static struct ccu_reset v3s_resets[] = {
